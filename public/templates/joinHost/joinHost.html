@@ -6,7 +6,6 @@
                 <input id="meet-name" ng-model="meetName" type="text" class="form-control" placeholder="MeetUp Name">
                 <input id="host-name" ng-model="hostName" type="text" class="form-control" placeholder="Your Name">
                 <button class="btn btn-primary" ng-click="createMeet()"> Create Meet</button>
-                <hr>
             </div>
         </div>
         <div id="host" ng-show="joinHost=='host'">
@@ -15,19 +14,24 @@
                 <input id="join-addrs" ng-model="memberAddrs" type="text" class="form-control" placeholder="Your Address">
                 <!--<input id="meet-name" ng-model="meetName" type="text" class="form-control" placeholder="MeetUp Name">-->
                 <button class="btn btn-primary" ng-click="joinMeet()"> Join Meet</button>
-                <hr>    
             </div>
+
             <div id="members">
                 Members<br>
-                <ul id="member-list">
-                    <li ng-repeat="member in members">{{member.name}}</li>
-                </ul>
+                <div id="member-list">
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in members">{{member.name}}</li>
+                    </ul>
+                </div>
             </div>
+
             <div id="places">
                 Places
-                <ul id="places-list">
-                    <li ng-repeat="place in places">{{place.name}}</li>
-                </ul>
+                <div id="places-list">
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="place in places">{{place.name}}</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

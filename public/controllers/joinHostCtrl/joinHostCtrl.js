@@ -220,7 +220,7 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
 
     $.getScript("https://maps.googleapis.com/maps/api/js?key=AIzaSyB2RoGEwsoZLm5ZbY_gsaNzIQdmls4dAi8&callback&libraries=places").then(function (script) {
         var green= new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|34BA46");
-
+        var bounds = new google.maps.LatLngBounds();
         map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 28.6139, lng: 77.2090},
             zoom: 8
@@ -252,6 +252,7 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                 // }
                 centroid.lat+= parseFloat(member.location.lat);
                 centroid.lng+= parseFloat(member.location.lng);
+                bounds.extend(member.location);
             });
 
 
@@ -261,8 +262,8 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
 
             getNearbyPlaces(centroid).then(function (result) {
                 // console.log(result);
-                map.panTo(centroid);
-                map.setZoom(15);
+                // map.panTo(centroid);
+                // map.setZoom(15);
                 $scope.places= result;
                 result.forEach(function (place, i) {
                     placesMarker= new google.maps.Marker({
@@ -281,6 +282,7 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                 icon: green,
                 title: 'Meet Location'
             })
+            map.fitBounds(bounds);
         });
 
 
@@ -427,6 +429,10 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
 
     $scope.joinMeet= function(){
         // getLatLong().then(function (result) {
+            console.log($scope.memberName);
+            if($scope.memberName== undefined|| $scope.memberName== ' '|| $scope.memberName==''|| marker== undefined){
+                return;
+            }
             var location= {
                 lat:marker.position.lat(),
                 lng: marker.position.lng()
