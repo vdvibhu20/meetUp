@@ -1,0 +1,12 @@
+body {
+
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  background: url(../images/notes_back.jpg);
+  background-size: cover;
+  background-position: center;
+}
+
+
+a {
+  color: #00B7FF;
+}

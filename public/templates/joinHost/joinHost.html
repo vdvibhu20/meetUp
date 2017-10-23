@@ -1,0 +1,43 @@
+<div>
+    <div id="search">
+        <div id="join" ng-show="joinHost=='join'">
+            <div class="input">
+                <input id="meet-addrs" ng-model="meetAddrs" type="text" class="form-control" placeholder="Enter Address">
+                <input id="meet-name" ng-model="meetName" type="text" class="form-control" placeholder="MeetUp Name">
+                <input id="host-name" ng-model="hostName" type="text" class="form-control" placeholder="Your Name">
+                <button class="btn btn-primary" ng-click="createMeet()"> Create Meet</button>
+                <hr>
+            </div>
+        </div>
+        <div id="host" ng-show="joinHost=='host'">
+            <div class="input">
+                <input id="member-name" ng-model="memberName" type="text" class="form-control" placeholder="Your Name">
+                <input id="join-addrs" ng-model="memberAddrs" type="text" class="form-control" placeholder="Your Address">
+                <!--<input id="meet-name" ng-model="meetName" type="text" class="form-control" placeholder="MeetUp Name">-->
+                <button class="btn btn-primary" ng-click="joinMeet()"> Join Meet</button>
+                <hr>    
+            </div>
+            <div id="members">
+                Members<br>
+                <ul id="member-list">
+                    <li ng-repeat="member in members">{{member.name}}</li>
+                </ul>
+            </div>
+            <div id="places">
+                Places
+                <ul id="places-list">
+                    <li ng-repeat="place in places">{{place.name}}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="map">
+
+    </div>
+
+    <!--<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2RoGEwsoZLm5ZbY_gsaNzIQdmls4dAi8&callback&libraries=places&callback=initMap"-->
+            <!--async defer></script>-->
+
+
+
+</div>
