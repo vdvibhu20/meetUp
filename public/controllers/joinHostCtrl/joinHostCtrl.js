@@ -71,6 +71,9 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
     });
 
     $scope.createMeet= function(){
+        if($scope.meetAddrs==undefined || $scope.meetName== undefined || $scope.hostName== undefined || marker== undefined){
+            return;
+        }
         // getLatLong().then(function(result){
         //     console.log(result);
             // console.log();
