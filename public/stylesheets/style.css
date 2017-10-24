@@ -1,11 +1,11 @@
 body {
   height: 100vh;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-  background: url(../images/concert.jpg);
-  /*background: url(https://az616578.vo.msecnd.net/files/2017/02/11/636224379488419975-468861575_Crowd_34201891.jpg);*/
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /*background: url(../images/concert.jpg);*/
+  /*!*background: url(https://az616578.vo.msecnd.net/files/2017/02/11/636224379488419975-468861575_Crowd_34201891.jpg);*!*/
+  /*background-size: cover;*/
+  /*background-position: center;*/
+  /*background-repeat: no-repeat;*/
 }
 
 

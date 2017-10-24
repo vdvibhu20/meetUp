@@ -61,6 +61,11 @@ router.post('/join_meet', function (req, res) {
    req= req.body;
    mongo.insertMember(req, function (result) {
        console.log(result);
+       if(result.success){
+           res.json({success: true, result: result.result});
+       }else{
+           res.json({success: false, result: result.err});
+       }
    })
 });
 

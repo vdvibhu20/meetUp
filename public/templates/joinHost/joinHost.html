@@ -6,14 +6,22 @@
                 <input id="meet-name" ng-model="meetName" type="text" class="form-control" placeholder="MeetUp Name">
                 <input id="host-name" ng-model="hostName" type="text" class="form-control" placeholder="Your Name">
                 <button class="btn btn-primary" ng-click="createMeet()"> Create Meet</button>
+                <!--<button class="btn btn-primary" ng-click="invite()"> Create Meet</button>-->
             </div>
 
-            <div id="places">
-                Places
-                <div id="places-list">
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="place in places">{{place.name}}</li>
-                    </ul>
+            <div ng-if="afterCreate">
+                <div id="places">
+                    Places
+                    <div id="places-list">
+                        <ul class="list-group">
+                            <li class="list-group-item" ng-repeat="place in places">{{place.name}}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="invite">
+                    <img id="share-img" src="../../images/invite-share.svg" alt="">
+                    <br>
+                    <button class="btn" ng-click="invite()">Invite</button>
                 </div>
             </div>
         </div>
@@ -29,7 +37,7 @@
                 Members<br>
                 <div id="member-list">
                     <ul class="list-group">
-                        <li a class="list-group-item" ng-repeat="member in members">{{member.name}}</li>
+                        <li a class="list-group-item" ng-repeat="member in members">{{member.name}} | <span class="small">{{member.address}}</span></li>
                     </ul>
                 </div>
             </div>

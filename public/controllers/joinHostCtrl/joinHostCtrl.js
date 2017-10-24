@@ -15,6 +15,8 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
     var minLoc={lat: 90, lng: 180};
     $scope.members= [];
     $scope.places= [];
+    $scope.afterCreate= false;
+    var id;
     // --------------------------------
 
     $.getScript("https://maps.googleapis.com/maps/api/js?key=AIzaSyB2RoGEwsoZLm5ZbY_gsaNzIQdmls4dAi8&callback&libraries=places").then(function (script) {
@@ -59,107 +61,14 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                     draggable: true
                 });
                 // console.log($scope.meetAddrs);
-                // search();
+
             } else {
                 console.log('enter city');
                 document.getElementById('meet-addrs').placeholder = 'Enter a city';
             }
         }
 
-
-        function search() {
-            var search = {
-                bounds: map.getBounds(),
-                types: ['lodging']
-            };
-
-            places.nearbySearch(search, function(results, status) {
-                if (status === google.maps.places.PlacesServiceStatus.OK) {
-                    clearResults();
-                    clearMarkers();
-                    // Create a marker for each hotel found, and
-                    // assign a letter of the alphabetic to each marker icon.
-                    for (var i = 0; i < results.length; i++) {
-                        var markerLetter = String.fromCharCode('A'.charCodeAt(0) + (i % 26));
-                        var markerIcon = MARKER_PATH + markerLetter + '.png';
-                        // Use marker animation to drop the icons incrementally on the map.
-                        markers[i] = new google.maps.Marker({
-                            position: results[i].geometry.location,
-                            animation: google.maps.Animation.DROP,
-                            icon: markerIcon
-                        });
-                        // If the user clicks a hotel marker, show the details of that hotel
-                        // in an info window.
-                        markers[i].placeResult = results[i];
-                        google.maps.event.addListener(markers[i], 'click', showInfoWindow);
-                        setTimeout(dropMarker(i), i * 100);
-                        addResult(results[i], i);
-                    }
-                }
-            });
-        }
-
-        function addResult(result, i) {
-            var results = document.getElementById('results');
-            var markerLetter = String.fromCharCode('A'.charCodeAt(0) + (i % 26));
-            var markerIcon = MARKER_PATH + markerLetter + '.png';
-
-            var tr = document.createElement('tr');
-            tr.style.backgroundColor = (i % 2 === 0 ? '#F0F0F0' : '#FFFFFF');
-            tr.onclick = function() {
-                google.maps.event.trigger(markers[i], 'click');
-            };
-
-            var iconTd = document.createElement('td');
-            var nameTd = document.createElement('td');
-            var icon = document.createElement('img');
-            icon.src = markerIcon;
-            icon.setAttribute('class', 'placeIcon');
-            icon.setAttribute('className', 'placeIcon');
-            var name = document.createTextNode(result.name);
-            iconTd.appendChild(icon);
-            nameTd.appendChild(name);
-            tr.appendChild(iconTd);
-            tr.appendChild(nameTd);
-            results.appendChild(tr);
-        }
-
-        function showInfoWindow() {
-            var marker = this;
-            places.getDetails({placeId: marker.placeResult.place_id},
-                function(place, status) {
-                    if (status !== google.maps.places.PlacesServiceStatus.OK) {
-                        return;
-                    }
-                    infoWindow.open(map, marker);
-                    buildIWContent(place);
-                });
-        }
-
-        function dropMarker(i) {
-            return function() {
-                markers[i].setMap(map);
-            };
-        }
-
-
-
-        function clearMarkers() {
-            for (var i = 0; i < markers.length; i++) {
-                if (markers[i]) {
-                    markers[i].setMap(null);
-                }
-            }
-            markers = [];
-        }
-
-        function clearResults() {
-            var results = document.getElementById('results');
-            while (results.childNodes[0]) {
-                results.removeChild(results.childNodes[0]);
-            }
-        }
-    })
+    });
 
     $scope.createMeet= function(){
         // getLatLong().then(function(result){
@@ -178,14 +87,17 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                     name: $scope.meetName,
                     location: location,
                     host: $scope.hostName,
-                    members: [{name: $scope.hostName, location: location}]
+                    members: [{name: $scope.hostName, location: location, address: $scope.meetAddrs}]
                 }
             }).then(function(response){
+                marker.setMap(null);
                 console.log(response);
                 var meet= response.data.result;
+                id= meet.result[0]._id;
                 if(meet.success){
                     // console.log(meet.result[0]._id);
                     // $location.path('/join/'+ meet.result[0]._id);
+
                     getMembers(meet.result[0]._id).then(function (response) {
                         console.log(response);
                         $scope.members= response;
@@ -236,7 +148,9 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                                 bounds.extend(place.geometry.location);
                             })
                         });
-
+                        if(centroidMarker!= undefined){
+                            centroidMarker.setMap(null);
+                        }
                         centroidMarker= new google.maps.Marker({
                             map: map,
                             position: new google.maps.LatLng(centroid.lat, centroid.lng),
@@ -246,11 +160,18 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                         map.fitBounds(bounds);
                         google.maps.event.trigger(map, 'resize');
                         map.setZoom(15);
+                        $scope.afterCreate= true;
                     });
                 }
             })
         // })
     };
+
+    $scope.invite= function () {
+        var storage= {id: id}
+        localStorage.setItem('browserStorage', JSON.stringify(storage));
+        $location.path('/share');
+    }
 
     function getLatLong(){
         console.log('getLatLong()');
@@ -311,8 +232,11 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                     console.log(response);
                     if(response.data.success){
                         resolve(response.data.result);
+                    }else if(response.data.result.json.status== 'ZERO_RESULTS'){
+                        console.log('err in finding places');
+                        resolve(getNearbyPlaces(centroid, radius+500));
                     }else{
-                        console.log('err in finding places', response.data.result[0]);
+                        console.log('err in finding places');
                     }
                 })
             }
@@ -343,75 +267,14 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
     $scope.places= [];
 
     $.getScript("https://maps.googleapis.com/maps/api/js?key=AIzaSyB2RoGEwsoZLm5ZbY_gsaNzIQdmls4dAi8&callback&libraries=places").then(function (script) {
-        var green= new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|34BA46");
-        var bounds = new google.maps.LatLngBounds();
+        $scope.green= new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|34BA46");
+        $scope.bounds = new google.maps.LatLngBounds();
         map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 28.6139, lng: 77.2090},
             zoom: 8
         });
 
-        getMembers().then(function (response) {
-            console.log(response);
-            $scope.members= response;
-
-            var location;
-            response.forEach(function (member, i) {
-                console.log(member.location);
-                // location= {lat: member.location.lat, lng: member.location.long}
-                memberMarker[i]= new google.maps.Marker({
-                    map: map,
-                    position: new google.maps.LatLng(member.location.lat, member.location.lng),
-                    title: member.name
-                });
-                // if(member.location.lat> maxLoc.lat){
-                //     maxLoc.lat= member.location.lat;
-                // }else if(member.location.lat< minLoc.lat){
-                //     minLoc.lat= member.location.lat;
-                // }
-                //
-                // if(member.location.lng> maxLoc.lng){
-                //     maxLoc.lng= member.location.lng;
-                // }else if(member.location.lng< minLoc.lng){
-                //     minLoc.lng= member.location.lng;
-                // }
-                centroid.lat+= parseFloat(member.location.lat);
-                centroid.lng+= parseFloat(member.location.lng);
-                bounds.extend(member.location);
-            });
-            console.log(memberMarker);
-
-
-            centroid.lat/= response.length;
-            centroid.lng/= response.length;
-            getNearbyPlaces(centroid, 500).then(function (result) {
-
-                console.log(result);
-                // map.panTo(centroid);
-                $scope.places= result;
-                result.forEach(function (place, i) {
-                    placesMarker= new google.maps.Marker({
-                        map: map,
-                        position: place.geometry.location,
-                        icon: {url: place.icon, scaledSize: new google.maps.Size(20, 20)},
-                        // icon: place.icon,
-                        title: place.name
-                    })
-                    // map.setZoom(15);
-                    bounds.extend(place.geometry.location);
-                })
-            });
-
-            centroidMarker= new google.maps.Marker({
-                map: map,
-                position: new google.maps.LatLng(centroid.lat, centroid.lng),
-                icon: green,
-                title: 'Meet Location'
-            });
-            map.fitBounds(bounds);
-            google.maps.event.trigger(map, 'resize');
-        });
-
-
+        loadData();
 
         var  places, infoWindow;
         var markers = [];
@@ -457,101 +320,74 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                 document.getElementById('join-addrs').placeholder = 'Enter a city';
             }
         }
+    });
+
+    function loadData() {
+        centroid= {lat: 0.0, lng: 0.0};
+        getMembers().then(function (response) {
+            console.log(response);
+            $scope.members= response;
+
+            var location;
+            response.forEach(function (member, i) {
+                console.log(member.location);
+                // location= {lat: member.location.lat, lng: member.location.long}
+                memberMarker[i]= new google.maps.Marker({
+                    map: map,
+                    position: new google.maps.LatLng(member.location.lat, member.location.lng),
+                    title: member.name
+                });
+                // if(member.location.lat> maxLoc.lat){
+                //     maxLoc.lat= member.location.lat;
+                // }else if(member.location.lat< minLoc.lat){
+                //     minLoc.lat= member.location.lat;
+                // }
+                //
+                // if(member.location.lng> maxLoc.lng){
+                //     maxLoc.lng= member.location.lng;
+                // }else if(member.location.lng< minLoc.lng){
+                //     minLoc.lng= member.location.lng;
+                // }
+                centroid.lat+= parseFloat(member.location.lat);
+                centroid.lng+= parseFloat(member.location.lng);
+                $scope.bounds.extend(member.location);
+            });
+            console.log(memberMarker);
 
 
-        // function search() {
-        //     var search = {
-        //         bounds: map.getBounds(),
-        //         types: ['lodging']
-        //     };
-        //
-        //     places.nearbySearch(search, function(results, status) {
-        //         if (status === google.maps.places.PlacesServiceStatus.OK) {
-        //             clearResults();
-        //             clearMarkers();
-        //             // Create a marker for each hotel found, and
-        //             // assign a letter of the alphabetic to each marker icon.
-        //             for (var i = 0; i < results.length; i++) {
-        //                 var markerLetter = String.fromCharCode('A'.charCodeAt(0) + (i % 26));
-        //                 var markerIcon = MARKER_PATH + markerLetter + '.png';
-        //                 // Use marker animation to drop the icons incrementally on the map.
-        //                 markers[i] = new google.maps.Marker({
-        //                     position: results[i].geometry.location,
-        //                     animation: google.maps.Animation.DROP,
-        //                     icon: markerIcon
-        //                 });
-        //                 // If the user clicks a hotel marker, show the details of that hotel
-        //                 // in an info window.
-        //                 markers[i].placeResult = results[i];
-        //                 google.maps.event.addListener(markers[i], 'click', showInfoWindow);
-        //                 setTimeout(dropMarker(i), i * 100);
-        //                 addResult(results[i], i);
-        //             }
-        //         }
-        //     });
-        // }
-        //
-        // function addResult(result, i) {
-        //     var results = document.getElementById('results');
-        //     var markerLetter = String.fromCharCode('A'.charCodeAt(0) + (i % 26));
-        //     var markerIcon = MARKER_PATH + markerLetter + '.png';
-        //
-        //     var tr = document.createElement('tr');
-        //     tr.style.backgroundColor = (i % 2 === 0 ? '#F0F0F0' : '#FFFFFF');
-        //     tr.onclick = function() {
-        //         google.maps.event.trigger(markers[i], 'click');
-        //     };
-        //
-        //     var iconTd = document.createElement('td');
-        //     var nameTd = document.createElement('td');
-        //     var icon = document.createElement('img');
-        //     icon.src = markerIcon;
-        //     icon.setAttribute('class', 'placeIcon');
-        //     icon.setAttribute('className', 'placeIcon');
-        //     var name = document.createTextNode(result.name);
-        //     iconTd.appendChild(icon);
-        //     nameTd.appendChild(name);
-        //     tr.appendChild(iconTd);
-        //     tr.appendChild(nameTd);
-        //     results.appendChild(tr);
-        // }
-        //
-        // function showInfoWindow() {
-        //     var marker = this;
-        //     places.getDetails({placeId: marker.placeResult.place_id},
-        //         function(place, status) {
-        //             if (status !== google.maps.places.PlacesServiceStatus.OK) {
-        //                 return;
-        //             }
-        //             infoWindow.open(map, marker);
-        //             buildIWContent(place);
-        //         });
-        // }
-        //
-        // function dropMarker(i) {
-        //     return function() {
-        //         markers[i].setMap(map);
-        //     };
-        // }
-        //
-        //
-        //
-        // function clearMarkers() {
-        //     for (var i = 0; i < markers.length; i++) {
-        //         if (markers[i]) {
-        //             markers[i].setMap(null);
-        //         }
-        //     }
-        //     markers = [];
-        // }
-        //
-        // function clearResults() {
-        //     var results = document.getElementById('results');
-        //     while (results.childNodes[0]) {
-        //         results.removeChild(results.childNodes[0]);
-        //     }
-        // }
-    })
+            centroid.lat/= response.length;
+            centroid.lng/= response.length;
+            getNearbyPlaces(centroid, 500).then(function (result) {
+
+                console.log(result);
+                clearPlaces();
+                // map.panTo(centroid);
+                $scope.places= result;
+                result.forEach(function (place, i) {
+                    placesMarker[i]= new google.maps.Marker({
+                        map: map,
+                        position: place.geometry.location,
+                        icon: {url: place.icon, scaledSize: new google.maps.Size(20, 20)},
+                        // icon: place.icon,
+                        title: place.name
+                    })
+                    // map.setZoom(15);
+                    $scope.bounds.extend(place.geometry.location);
+                })
+            });
+            if(centroidMarker!= undefined){
+                centroidMarker.setMap(null);
+            }
+            centroidMarker= new google.maps.Marker({
+                map: map,
+                position: new google.maps.LatLng(centroid.lat, centroid.lng),
+                icon: $scope.green,
+                title: 'Meet Location'
+            });
+            map.fitBounds($scope.bounds);
+            google.maps.event.trigger(map, 'resize');
+        });
+    }
 
     $scope.joinMeet= function(){
         // getLatLong().then(function (result) {
@@ -571,10 +407,14 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                     match: id,
                     value:{
                         name: $scope.memberName,
-                        location: location
+                        location: location,
+                        address: $scope.memberAddrs
                     }
                 }
             }).then(function (response) {
+                console.log('joinedMeet');
+                marker.setMap(null);
+                loadData();
                 console.log(response);
             })
         // })
@@ -640,15 +480,23 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                     console.log(response);
                     if(response.data.success){
                         resolve(response.data.result);
-                    }else if(response.data.result.json.status== 'ZERO_RESULTS'){
+                    }
+                    else if(response.data.result.json.status== 'ZERO_RESULTS'){
                         console.log('err in finding places');
                         resolve(getNearbyPlaces(centroid, radius+500));
-                    }else{
+                    }
+                    else{
                         console.log('err in finding places');
                     }
                 })
             }
         )
+    }
+
+    function clearPlaces(){
+        placesMarker.forEach(function (place, i) {
+            place.setMap(null);
+        })
     }
 
 

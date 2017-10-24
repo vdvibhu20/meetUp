@@ -19,6 +19,10 @@ indexModule.config(['$routeProvider',
                 templateUrl: '/templates/joinHost/joinHost.html',
                 controller: 'joinCtrl'
             })
+            .when('/share', {
+                templateUrl: '/templates/shareLink/shareLink.html',
+                controller: 'shareLinkCtrl'
+            })
             .otherwise({
                 redirectTo: '/'
             });

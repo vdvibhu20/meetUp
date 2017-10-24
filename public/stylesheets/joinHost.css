@@ -19,6 +19,7 @@
     /*background: #cccccc;*/
 }
 
+
 #join, #host{
     /*display: flex;*/
     /*flex-direction: column;*/
@@ -26,6 +27,25 @@
     /*height: 100%;*/
     /*box-sizing: border-box;*/
     /*align-items: center;*/
+}
+
+.small{
+    color: #808080;
+    font-size:75%;
+}
+
+#invite{
+    text-align: center;
+    padding: 5vh 0;
+}
+
+#invite button{
+    background: #ffb32a;
+}
+
+#share-img{
+    height: 25vh;
+    width: 20vw;
 }
 
 .input{
@@ -84,11 +104,12 @@ ul{
 #places-list{
     height:95%;
     overflow: auto;
-    color: #808080;
+    color: #666666;
 }
 
 #member-list{
     height:95%;
     overflow: auto;
-    color: #808080;
+    color: #666666;
 }
+
