@@ -1,14 +1,26 @@
 indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$location',  function($rootScope, $scope, $http, $q, $location){
 
     var map;
-    $scope.meetAddrs='';
-    $scope.meetName='';
-    $scope.hostName='';
+    $scope.meetAddrs;
+    $scope.meetName;
+    $scope.hostName;
     $rootScope.joinHost= 'join';
+
+    var memberMarker= [];
+    var centroidMarker;;
     var marker;
+    var placesMarker= [];
+    var centroid= {lat: 0.0, lng: 0.0};
+    var maxLoc={lat: -90, lng: -180};
+    var minLoc={lat: 90, lng: 180};
+    $scope.members= [];
+    $scope.places= [];
     // --------------------------------
 
     $.getScript("https://maps.googleapis.com/maps/api/js?key=AIzaSyB2RoGEwsoZLm5ZbY_gsaNzIQdmls4dAi8&callback&libraries=places").then(function (script) {
+
+
+
         map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 28.6139, lng: 77.2090},
             zoom: 8
@@ -153,6 +165,8 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
         // getLatLong().then(function(result){
         //     console.log(result);
             // console.log();
+        var bounds = new google.maps.LatLngBounds();
+        var green= new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|34BA46");
             var location= {
                 lat:marker.position.lat(),
                 lng: marker.position.lng()
@@ -170,8 +184,69 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                 console.log(response);
                 var meet= response.data.result;
                 if(meet.success){
-                    console.log(meet.result[0]._id);
-                    $location.path('/join/'+ meet.result[0]._id);
+                    // console.log(meet.result[0]._id);
+                    // $location.path('/join/'+ meet.result[0]._id);
+                    getMembers(meet.result[0]._id).then(function (response) {
+                        console.log(response);
+                        $scope.members= response;
+
+                        var location;
+                        response.forEach(function (member, i) {
+                            console.log(member.location);
+                            // location= {lat: member.location.lat, lng: member.location.long}
+                            memberMarker[i]= new google.maps.Marker({
+                                map: map,
+                                position: new google.maps.LatLng(member.location.lat, member.location.lng),
+                                title: member.name
+                            });
+                            // if(member.location.lat> maxLoc.lat){
+                            //     maxLoc.lat= member.location.lat;
+                            // }else if(member.location.lat< minLoc.lat){
+                            //     minLoc.lat= member.location.lat;
+                            // }
+                            //
+                            // if(member.location.lng> maxLoc.lng){
+                            //     maxLoc.lng= member.location.lng;
+                            // }else if(member.location.lng< minLoc.lng){
+                            //     minLoc.lng= member.location.lng;
+                            // }
+                            centroid.lat+= parseFloat(member.location.lat);
+                            centroid.lng+= parseFloat(member.location.lng);
+                            bounds.extend(member.location);
+                        });
+                        console.log(memberMarker);
+
+
+                        centroid.lat/= response.length;
+                        centroid.lng/= response.length;
+                        getNearbyPlaces(centroid, 500).then(function (result) {
+
+                            // console.log(result);
+                            // map.panTo(centroid);
+                            $scope.places= result;
+                            result.forEach(function (place, i) {
+                                placesMarker= new google.maps.Marker({
+                                    map: map,
+                                    position: place.geometry.location,
+                                    icon: {url: place.icon, scaledSize: new google.maps.Size(20, 20)},
+                                    // icon: place.icon,
+                                    title: place.name
+                                })
+                                // map.setZoom(15);
+                                bounds.extend(place.geometry.location);
+                            })
+                        });
+
+                        centroidMarker= new google.maps.Marker({
+                            map: map,
+                            position: new google.maps.LatLng(centroid.lat, centroid.lng),
+                            icon: green,
+                            title: 'Meet Location'
+                        })
+                        map.fitBounds(bounds);
+                        google.maps.event.trigger(map, 'resize');
+                        map.setZoom(15);
+                    });
                 }
             })
         // })
@@ -189,6 +264,55 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
                     console.log(response);
                     if(response.data.success){
                         resolve(response.data);
+                    }
+                })
+            }
+        )
+    }
+
+    function getMembers(id) {
+        console.log(id);
+        return $q(
+            function (resolve, reject) {
+                $http({
+                    method: 'GET',
+                    url: '/get_members',
+                    params: {id: id}
+                }).then(function (response) {
+                    if(response.data.success){
+                        resolve(response.data.result[0].members);
+                    }
+                    else{
+                        console.log('err getMembers');
+                        console.log(response);
+                    }
+                    // console.log(response);
+                })
+            }
+        )
+    }
+
+    function getNearbyPlaces(centroid, radius) {
+        // var radius;
+        // var latDiff= maxLoc.lat- minLoc.lat;
+        // var lngDiff= maxLoc.lng- minLoc.lng;
+        // var radius= Math.ceil(Math.max(latDiff, lngDiff))* 0.20 *111000;
+        // console.log(radius);
+        return $q(
+            function (resolve, reject) {
+                $http({
+                    method: 'GET',
+                    url: '/get_nearby_places',
+                    params: {
+                        location: centroid,
+                        radius: radius
+                    }
+                }).then(function (response) {
+                    console.log(response);
+                    if(response.data.success){
+                        resolve(response.data.result);
+                    }else{
+                        console.log('err in finding places', response.data.result[0]);
                     }
                 })
             }
@@ -254,16 +378,15 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                 centroid.lng+= parseFloat(member.location.lng);
                 bounds.extend(member.location);
             });
-
-
             console.log(memberMarker);
+
+
             centroid.lat/= response.length;
             centroid.lng/= response.length;
+            getNearbyPlaces(centroid, 500).then(function (result) {
 
-            getNearbyPlaces(centroid).then(function (result) {
-                // console.log(result);
+                console.log(result);
                 // map.panTo(centroid);
-                // map.setZoom(15);
                 $scope.places= result;
                 result.forEach(function (place, i) {
                     placesMarker= new google.maps.Marker({
@@ -273,6 +396,8 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                         // icon: place.icon,
                         title: place.name
                     })
+                    // map.setZoom(15);
+                    bounds.extend(place.geometry.location);
                 })
             });
 
@@ -281,8 +406,9 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                 position: new google.maps.LatLng(centroid.lat, centroid.lng),
                 icon: green,
                 title: 'Meet Location'
-            })
+            });
             map.fitBounds(bounds);
+            google.maps.event.trigger(map, 'resize');
         });
 
 
@@ -495,7 +621,7 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
         )
     }
 
-    function getNearbyPlaces(centroid) {
+    function getNearbyPlaces(centroid, radius) {
         // var radius;
         // var latDiff= maxLoc.lat- minLoc.lat;
         // var lngDiff= maxLoc.lng- minLoc.lng;
@@ -508,14 +634,17 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
                     url: '/get_nearby_places',
                     params: {
                         location: centroid,
-                        radius: 1000
+                        radius: radius
                     }
                 }).then(function (response) {
                     console.log(response);
                     if(response.data.success){
                         resolve(response.data.result);
+                    }else if(response.data.result.json.status== 'ZERO_RESULTS'){
+                        console.log('err in finding places');
+                        resolve(getNearbyPlaces(centroid, radius+500));
                     }else{
-                        console.log('err in finding places', response.data.result[0]);
+                        console.log('err in finding places');
                     }
                 })
             }
