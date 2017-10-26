@@ -16,9 +16,9 @@ function createCollection(req, callback) {
             console.log(err);
             callback({success: false, err: err});
         }else{
-            console.log('hello');
+            // console.log('hello');
 
-            console.log('success');
+            // console.log('success');
 
             db.createCollection('meetup', function(err, response){
                 if(err){
@@ -33,8 +33,8 @@ function createCollection(req, callback) {
 
 
 function createMeet(req, callback){
-    console.log('createMeet');
-    console.log(req);
+    // console.log('createMeet');
+    // console.log(req);
     MongoClient.connect(url, function (err, db) {
         if(err){
             console.log(err);
@@ -44,7 +44,7 @@ function createMeet(req, callback){
                 if(err){
                     callback({success: false, err: err});
                 }else{
-                    console.log(result.ops);
+                    // console.log(result.ops);
                     callback({success: true, result: result.ops});
                 }
             })
@@ -57,7 +57,7 @@ function insertMember(req, callback){
         if(err){
             callback({success: false, err: err})
         }else{
-            console.log(req);
+            // console.log(req);
             db.collection('meetup').updateOne({_id: new objectId(req.match)}, {$push: {members: req.value}}, function(err, result){
                 if(err){
                     callback({success: false, err: err});
@@ -78,7 +78,7 @@ function getMembers(req, callback){
                 if(err){
                     callback({success: false, err: err});
                 }else{
-                    console.log('getmember result');
+                    // console.log('getmember result');
                     // console.log(result);
                     callback({success: true, data: result});
                 }

@@ -5,7 +5,7 @@ var mongo= require('../public/lib/mongo/mongoQuery');
 
 
 mongo.createCollection('meetup', function(result){
-    console.log('mongo-createCollection-indexjs');
+    // console.log('mongo-createCollection-indexjs');
     // console.log(result);
 });
 
@@ -16,13 +16,13 @@ router.get('/', function(req, res){
 
 
 router.get('/getLatLong', function(req, res){
-    console.log('getlatlong');
+    // console.log('getlatlong');
     // req= req.body;
-    console.log(req.params);
+    // console.log(req.params);
     googleMapsClient.geocode({address: req.param('address')}, function(result, status){
         if(status.json.status== 'OK'){
-            console.log('geocode');
-            console.log(result);
+            // console.log('geocode');
+            // console.log(result);
             res.json({success: true, result: status.json.results});
         }else{
             res.json({success: false, result: status})
@@ -32,9 +32,9 @@ router.get('/getLatLong', function(req, res){
 
 router.post('/create_meet', function(req, res){
     req= req.body;
-    console.log(req);
+    // console.log(req);
     mongo.createMeet(req, function onComplete(result){
-        console.log('index; result');
+        // console.log('index; result');
         // console.log(result);
         res.json({result: result});
     })
@@ -42,12 +42,12 @@ router.post('/create_meet', function(req, res){
 
 
 router.get('/get_members', function(req, res){
-    console.log('getmembers');
+    // console.log('getmembers');
     // req= req.body;
     // console.log(req);
 
     mongo.getMembers(req, function(result){
-        console.log(result);
+        // console.log(result);
         if(result.success){
             res.json({success: true, result: result.data});
         }else{
@@ -57,10 +57,10 @@ router.get('/get_members', function(req, res){
 });
 
 router.post('/join_meet', function (req, res) {
-   console.log('join meet');
+   // console.log('join meet');
    req= req.body;
    mongo.insertMember(req, function (result) {
-       console.log(result);
+       // console.log(result);
        if(result.success){
            res.json({success: true, result: result.result});
        }else{
@@ -78,15 +78,15 @@ router.get('/get_nearby_places', function (req, res) {
         radius: radius,
         type: 'restaurant'
     }
-    console.log(data);
+    // console.log(data);
 
     googleMapsClient.placesNearby(data, function (result, status) {
         if(status.json.status=='OK'){
             res.json({success: true, result: status.json.results});
-            console.log(status);
+            // console.log(status);
         }else{
             res.json({success: false, result: status})
-            console.log(status);
+            // console.log(status);
         }
     })
 })
