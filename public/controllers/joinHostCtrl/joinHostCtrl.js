@@ -76,97 +76,100 @@ indexModule.controller('hostCtrl', ['$rootScope', '$scope', '$http', '$q', '$loc
         }
         // getLatLong().then(function(result){
         //     console.log(result);
-            // console.log();
+        // console.log();
         var bounds = new google.maps.LatLngBounds();
         var green= new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|34BA46");
-            var location= {
-                lat:marker.position.lat(),
-                lng: marker.position.lng()
+        var location= {
+            lat:marker.position.lat(),
+            lng: marker.position.lng()
+        }
+        $http({
+            method: 'POST',
+            url: '/create_meet',
+            data: {
+                name: $scope.meetName,
+                location: location,
+                host: $scope.hostName,
+                members: [{name: $scope.hostName, location: location, address: $scope.meetAddrs}]
             }
-            $http({
-                method: 'POST',
-                url: '/create_meet',
-                data: {
-                    name: $scope.meetName,
-                    location: location,
-                    host: $scope.hostName,
-                    members: [{name: $scope.hostName, location: location, address: $scope.meetAddrs}]
-                }
-            }).then(function(response){
-                marker.setMap(null);
-                console.log(response);
-                var meet= response.data.result;
-                id= meet.result[0]._id;
-                if(meet.success){
-                    // console.log(meet.result[0]._id);
-                    // $location.path('/join/'+ meet.result[0]._id);
+        }).then(function(response){
+            marker.setMap(null);
+            marker= undefined;
+            $scope.meetAddrs='';
+            $scope.meetName='';
+            console.log(response);
+            var meet= response.data.result;
+            id= meet.result[0]._id;
+            if(meet.success){
+                // console.log(meet.result[0]._id);
+                // $location.path('/join/'+ meet.result[0]._id);
 
-                    getMembers(meet.result[0]._id).then(function (response) {
-                        console.log(response);
-                        $scope.members= response;
+                getMembers(meet.result[0]._id).then(function (response) {
+                    console.log(response);
+                    $scope.members= response;
 
-                        var location;
-                        response.forEach(function (member, i) {
-                            console.log(member.location);
-                            // location= {lat: member.location.lat, lng: member.location.long}
-                            memberMarker[i]= new google.maps.Marker({
-                                map: map,
-                                position: new google.maps.LatLng(member.location.lat, member.location.lng),
-                                title: member.name
-                            });
-                            // if(member.location.lat> maxLoc.lat){
-                            //     maxLoc.lat= member.location.lat;
-                            // }else if(member.location.lat< minLoc.lat){
-                            //     minLoc.lat= member.location.lat;
-                            // }
-                            //
-                            // if(member.location.lng> maxLoc.lng){
-                            //     maxLoc.lng= member.location.lng;
-                            // }else if(member.location.lng< minLoc.lng){
-                            //     minLoc.lng= member.location.lng;
-                            // }
-                            centroid.lat+= parseFloat(member.location.lat);
-                            centroid.lng+= parseFloat(member.location.lng);
-                            bounds.extend(member.location);
-                        });
-                        console.log(memberMarker);
-
-
-                        centroid.lat/= response.length;
-                        centroid.lng/= response.length;
-                        getNearbyPlaces(centroid, 500).then(function (result) {
-
-                            // console.log(result);
-                            // map.panTo(centroid);
-                            $scope.places= result;
-                            result.forEach(function (place, i) {
-                                placesMarker= new google.maps.Marker({
-                                    map: map,
-                                    position: place.geometry.location,
-                                    icon: {url: place.icon, scaledSize: new google.maps.Size(20, 20)},
-                                    // icon: place.icon,
-                                    title: place.name
-                                })
-                                // map.setZoom(15);
-                                bounds.extend(place.geometry.location);
-                            })
-                        });
-                        if(centroidMarker!= undefined){
-                            centroidMarker.setMap(null);
-                        }
-                        centroidMarker= new google.maps.Marker({
+                    var location;
+                    response.forEach(function (member, i) {
+                        console.log(member.location);
+                        // location= {lat: member.location.lat, lng: member.location.long}
+                        memberMarker[i]= new google.maps.Marker({
                             map: map,
-                            position: new google.maps.LatLng(centroid.lat, centroid.lng),
-                            icon: green,
-                            title: 'Meet Location'
-                        })
-                        map.fitBounds(bounds);
-                        google.maps.event.trigger(map, 'resize');
-                        map.setZoom(15);
-                        $scope.afterCreate= true;
+                            position: new google.maps.LatLng(member.location.lat, member.location.lng),
+                            title: member.name
+                        });
+                        // if(member.location.lat> maxLoc.lat){
+                        //     maxLoc.lat= member.location.lat;
+                        // }else if(member.location.lat< minLoc.lat){
+                        //     minLoc.lat= member.location.lat;
+                        // }
+                        //
+                        // if(member.location.lng> maxLoc.lng){
+                        //     maxLoc.lng= member.location.lng;
+                        // }else if(member.location.lng< minLoc.lng){
+                        //     minLoc.lng= member.location.lng;
+                        // }
+                        centroid.lat+= parseFloat(member.location.lat);
+                        centroid.lng+= parseFloat(member.location.lng);
+                        bounds.extend(member.location);
                     });
-                }
-            })
+                    console.log(memberMarker);
+
+
+                    centroid.lat/= response.length;
+                    centroid.lng/= response.length;
+                    getNearbyPlaces(centroid, 500).then(function (result) {
+
+                        // console.log(result);
+                        // map.panTo(centroid);
+                        $scope.places= result;
+                        result.forEach(function (place, i) {
+                            placesMarker= new google.maps.Marker({
+                                map: map,
+                                position: place.geometry.location,
+                                icon: {url: place.icon, scaledSize: new google.maps.Size(20, 20)},
+                                // icon: place.icon,
+                                title: place.name
+                            })
+                            // map.setZoom(15);
+                            bounds.extend(place.geometry.location);
+                        })
+                    });
+                    if(centroidMarker!= undefined){
+                        centroidMarker.setMap(null);
+                    }
+                    centroidMarker= new google.maps.Marker({
+                        map: map,
+                        position: new google.maps.LatLng(centroid.lat, centroid.lng),
+                        icon: green,
+                        title: 'Meet Location'
+                    })
+                    map.fitBounds(bounds);
+                    google.maps.event.trigger(map, 'resize');
+                    map.setZoom(15);
+                    $scope.afterCreate= true;
+                });
+            }
+        })
         // })
     };
 
@@ -394,32 +397,36 @@ indexModule.controller('joinCtrl', ['$rootScope', '$scope', '$http', '$q', '$rou
 
     $scope.joinMeet= function(){
         // getLatLong().then(function (result) {
-            console.log($scope.memberName);
-            if($scope.memberName== undefined|| $scope.memberName== ' '|| $scope.memberName==''|| marker== undefined){
-                return;
-            }
-            var location= {
-                lat:marker.position.lat(),
-                lng: marker.position.lng()
-            }
+        console.log($scope.memberName);
+        if($scope.memberName== undefined|| $scope.memberName== ' '|| $scope.memberName==''|| marker== undefined){
+            return;
+        }
+        var location= {
+            lat:marker.position.lat(),
+            lng: marker.position.lng()
+        }
 
-            $http({
-                method: 'POST',
-                url: ('/join_meet'),
-                data: {
-                    match: id,
-                    value:{
-                        name: $scope.memberName,
-                        location: location,
-                        address: $scope.memberAddrs
-                    }
+        $http({
+            method: 'POST',
+            url: ('/join_meet'),
+            data: {
+                match: id,
+                value:{
+                    name: $scope.memberName,
+                    location: location,
+                    address: $scope.memberAddrs
                 }
-            }).then(function (response) {
-                console.log('joinedMeet');
-                marker.setMap(null);
-                loadData();
-                console.log(response);
-            })
+            }
+        }).then(function (response) {
+            console.log('joinedMeet');
+            marker.setMap(null);
+            marker= undefined;
+            $scope.memberAddrs= '';
+            $scope.memberName= '';
+            console.log(marker);
+            loadData();
+            console.log(response);
+        })
         // })
 
     };
